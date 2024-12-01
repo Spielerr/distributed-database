@@ -1,7 +1,7 @@
 '''
 This is basically a Site
 '''
-
+# first change from kkg
 from Variable import Variable
 
 class DataManager:
