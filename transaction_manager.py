@@ -20,6 +20,7 @@ class TransactionManager:
         # create new transaction object
         new_transaction = Transaction(transaction_number, timestamp)
         self.all_transactions[transaction_number] = new_transaction
+        print("T" + str(transaction_number) + " begins")
 
     def add_write_operation(self, transaction_number: int, variable: int, value: int, timestamp: int):
         # fetch the transaction object
@@ -28,6 +29,8 @@ class TransactionManager:
     def add_read_operation(self, transaction_number: int, variable: int, timestamp: int):
         # fetch the transaction object
         self.all_transactions[transaction_number].read_operations.append((timestamp, variable))
+        # also print the value as requested by read
+        print("x" + str(variable) + ": " + str(self.site_manager.return_value(variable)))
 
     def end_transaction(self, transaction_number: int, timestamp: int):
         self.all_transactions[transaction_number].end_timestamp = timestamp
@@ -40,6 +43,8 @@ class TransactionManager:
             else:
                 #abort
                 print("T" + str(transaction_number) + " aborts")
+        else:
+            print("T" + str(transaction_number) + " commits")
 
     def transaction_has_all_reads(self, transaction_number: int):
         return not self.all_transactions[transaction_number].write_operations
