@@ -10,9 +10,14 @@ class SiteManager:
         for i in range(1, 11):
             self.sites.append(Site(i))
 
+    def return_value(self, variable):
+        for site in self.sites:
+            if variable in site.store:
+                return site.store[variable]
+
     def update_site(self, variable, value):
         for site in self.sites:
-            if variable in site.store and site.store[variable] is None:
+            if variable in site.store:
                 site.store[variable] = value
 
     def dump(self):

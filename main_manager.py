@@ -12,13 +12,13 @@ class MainManager:
     def parse_input(self, file_path):
          with open(file_path, 'r') as file:
             for line in file:
-                self.current_time += 1
-
                 line = line.strip()  # Remove leading/trailing whitespaces
 
                 # Skip comments and empty lines
                 if not line or line.startswith('//'):
                     continue
+
+                self.current_time += 1
 
                 # Match 'begin(T1)'
                 if re.match(r'^begin\s*\(\s*(T\d+)\s*\)$', line, re.IGNORECASE):
@@ -43,6 +43,8 @@ class MainManager:
                 # Match 'R(T1, x1)'
                 elif re.match(r'^r\s*\(\s*(T\d+)\s*,\s*(x\d+)\s*\)$', line, re.IGNORECASE):
                     transaction_number, variable_id = re.findall(r'\d+', line)
+                    transaction_number = int(transaction_number)
+                    variable_id = int(variable_id)
                     self.transaction_manager.add_read_operation(transaction_number, variable_id, self.current_time)
 
                 # Match 'fail(2)'
@@ -62,4 +64,4 @@ class MainManager:
 
 if __name__ == "__main__":
     main_manager = MainManager()
-    main_manager.parse_input("tests/test1.txt")
+    main_manager.parse_input("tests/test2.txt")
