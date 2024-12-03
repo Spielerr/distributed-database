@@ -31,10 +31,14 @@ class SiteManager:
                         return site.store[variable][i-1][1]
                 return site.store[variable][-1][1]
 
+        # if read failed and we have exited out of the for loop, then need to WAIT
+
     def update_site(self, variable, value, time):
         for site in self.sites:
             if variable in site.store:
                 site.store[variable].append((time, value))
+
+        # if write failed and we have exited out of the for loop, then need to WAIT
 
     def fail_site(self, site_number, timestamp):
         self.sites[site_number].last_failed_timestamp = timestamp
