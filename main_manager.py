@@ -14,8 +14,14 @@ class MainManager:
             for line in file:
                 line = line.strip()  # Remove leading/trailing whitespaces
 
+                # # Skip comments and empty lines
+                # if not line or line.startswith('//'):
+                #     continue
+                # Remove inline comments (everything after //)
+                line = line.split('//')[0].strip()
+
                 # Skip comments and empty lines
-                if not line or line.startswith('//'):
+                if not line:
                     continue
 
                 self.current_time += 1
@@ -68,4 +74,4 @@ class MainManager:
 
 if __name__ == "__main__":
     main_manager = MainManager()
-    main_manager.parse_input("tests/test6.txt")
+    main_manager.parse_input("tests/test24.txt")

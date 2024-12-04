@@ -46,12 +46,16 @@ class TransactionManager:
         if not self.transaction_has_all_reads(transaction_number):
             if self.transaction_is_first_committer(transaction_number) and self.update_transaction_values(transaction_number, timestamp):
                 self.all_transactions[transaction_number].succeeded = True
+                # TODO : print where all transaction wrote?
                 print("T" + str(transaction_number) + " commits")
+                self.all_transactions[transaction_number].succeeded = True
             else:
                 #abort
                 print("T" + str(transaction_number) + " aborts")
+                self.all_transactions[transaction_number].succeeded = False
         else:
             print("T" + str(transaction_number) + " commits")
+            self.all_transactions[transaction_number].succeeded = True
 
     def transaction_has_all_reads(self, transaction_number: int):
         return not self.all_transactions[transaction_number].write_operations

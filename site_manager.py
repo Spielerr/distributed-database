@@ -17,11 +17,14 @@ class SiteManager:
     '''
 
     def check_failure_since_last_commit(self, site, variable):
+        # TODO this needs to be fixed to pass test24
         """
         Returns true if site did not fail between these time and variable's last commit at the site
         else returns false
         """
         last_commit_time_on_var = site.store[variable][-1][0]
+        if site.last_failed_timestamp == None:
+            return True
         if site.last_failed_timestamp > last_commit_time_on_var:
             return False
         return True
@@ -51,7 +54,12 @@ class SiteManager:
         # if read failed and we have exited out of the for loop, then need to WAIT
 
     def update_site(self, variable, value, update_timestamp, write_timestamp):
+        '''
+        update_timestamp is at transaction commit time
+        write_timestamp is at the time the write instruction came
+        '''
         for site in self.sites:
+            # TODO : check w karan that this check should only happen for sites that were up
             if write_timestamp < site.last_failed_timestamp < update_timestamp:
                 #abort
                 return False
