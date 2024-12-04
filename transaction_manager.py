@@ -30,14 +30,21 @@ class TransactionManager:
         self.all_transactions[transaction_number].read_operations.append((timestamp, variable))
         # also print the value at the start of this transaction as requested by read
         transaction_begin_time = self.all_transactions[transaction_number].begin_timestamp
-        print("x" + str(variable) + ": " + str(self.site_manager.return_value(variable, transaction_begin_time)))
+        value_read, from_site_number = self.site_manager.return_value(variable, transaction_begin_time)
+        if value_read is not None:
+            print("x" + str(variable) + ": " + str(
+                self.site_manager.return_value(variable, transaction_begin_time)) + " read from site " + str(
+                from_site_number) + " by transaction " + str(transaction_number))
+        else:
+            # TODO need to put transaction status as wait or abort and do whatever else is required
+            print("transaction " + str(transaction_number) + " that wants to read variable " + str(
+                variable) + " cannot be read from any site atm")
 
     def end_transaction(self, transaction_number: int, timestamp: int):
         self.all_transactions[transaction_number].end_timestamp = timestamp
 
         if not self.transaction_has_all_reads(transaction_number):
-            if self.transaction_is_first_committer(transaction_number):
-                self.update_transaction_values(transaction_number, timestamp)
+            if self.transaction_is_first_committer(transaction_number) and self.update_transaction_values(transaction_number, timestamp):
                 self.all_transactions[transaction_number].succeeded = True
                 print("T" + str(transaction_number) + " commits")
             else:
@@ -64,4 +71,6 @@ class TransactionManager:
 
     def update_transaction_values(self, transaction_number: int, timestamp: int):
         for new_write in self.all_transactions[transaction_number].write_operations:
-            self.site_manager.update_site(new_write[1], new_write[2], timestamp)
+            if not self.site_manager.update_site(new_write[1], new_write[2], timestamp, new_write[0]):
+                return False
+        return True

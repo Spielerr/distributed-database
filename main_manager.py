@@ -50,13 +50,13 @@ class MainManager:
                 # Match 'fail(2)'
                 elif re.match(r'^fail\s*\(\s*(\d+)\s*\)$', line, re.IGNORECASE):
                     site_number = re.findall(r'\d+', line)[0]
-                    site_number = int(site_number)
+                    site_number = int(site_number) - 1
                     self.site_manager.fail_site(site_number, self.current_time)
 
                 # Match 'recover(2)'
                 elif re.match(r'^recover\s*\(\s*(\d+)\s*\)$', line, re.IGNORECASE):
                     site_number = re.findall(r'\d+', line)[0]
-                    site_number = int(site_number)
+                    site_number = int(site_number) - 1
                     self.site_manager.recover_site(site_number, self.current_time)
 
                 # Match 'dump()'
@@ -68,4 +68,4 @@ class MainManager:
 
 if __name__ == "__main__":
     main_manager = MainManager()
-    main_manager.parse_input("tests/test2.txt")
+    main_manager.parse_input("tests/test6.txt")
