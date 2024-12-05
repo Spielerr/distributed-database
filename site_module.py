@@ -6,6 +6,8 @@ class Site:
         self.initialize_store()
         self.last_failed_timestamp = 0
         self.last_recovered_timestamp = 0
+        self.fail_list = [] # stores all timestamps when a site fails
+        self.recovers_list = [] # stores all timestamps when a site recovers
         self.live = True
 
     def initialize_store(self):

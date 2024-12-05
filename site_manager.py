@@ -16,18 +16,31 @@ class SiteManager:
     check last value in site's store and fetch the timestamp, that is the last committed timestamp
     '''
 
-    def check_failure_since_last_commit(self, site, variable):
+    def check_failure_since_last_commit(self, site, variable, transaction_start_time):
         # TODO this needs to be fixed to pass test24
         """
         Returns true if site did not fail between these time and variable's last commit at the site
         else returns false
         """
-        last_commit_time_on_var = site.store[variable][-1][0]
-        if site.last_failed_timestamp == None:
+        commit_time_before_trans_begin = 0
+        for i in range(1, len(site.store[variable])):
+                commit_time_before_trans_begin = site.store[variable][i][0]
+                if site.store[variable][i][0] > transaction_start_time:
+                    commit_time_before_trans_begin = site.store[variable][i-1][0]
+                    break
+        if len(site.fail_list)==0:
             return True
-        if site.last_failed_timestamp > last_commit_time_on_var:
-            return False
+        for i in range(len(site.fail_list)):
+            if site.fail_list[i] >= commit_time_before_trans_begin and site.fail_list[i] <=  transaction_start_time:
+                # print('read failed here for site :', site.site_number)
+                return False
         return True
+        # last_commit_time_on_var = site.store[variable][-1][0]
+        # if site.last_failed_timestamp == None:
+        #     return True
+        # if site.last_failed_timestamp > last_commit_time_on_var:
+        #     return False
+        # return True
 
     '''
     TODO: Also add code making sure a site which has recovered doesn't have it's variables open to reading,
@@ -39,11 +52,14 @@ class SiteManager:
     allowed at s until a committed write to x takes place on s."
     '''
     def return_value(self, variable, time):
+        '''
+        time is start time of the transaction
+        '''
         for site in self.sites:
             if site.live and variable in site.store:
-                if site.read_mask[variable] == 0:
+                if site.read_mask[variable] == 0 and variable%2==0: # TODO check variable needs to be even
                     continue
-                if variable % 2 == 0 and not self.check_failure_since_last_commit(site, variable):
+                if variable % 2 == 0 and not self.check_failure_since_last_commit(site, variable, time):
                     continue
                 for i in range(len(site.store[variable])):
                     if site.store[variable][i][0] > time:
@@ -80,13 +96,15 @@ class SiteManager:
         # if write failed and we have exited out of the for loop, then need to WAIT
 
     def fail_site(self, site_number, timestamp):
-        self.sites[site_number - 1].last_failed_timestamp = timestamp
-        self.sites[site_number - 1].live = False
+        self.sites[site_number].last_failed_timestamp = timestamp
+        self.sites[site_number].fail_list.append(timestamp)
+        self.sites[site_number ].live = False
         for i in range(2, 21, 2):  # setting read mask of all even numbered variables to 0
             self.sites[site_number].read_mask[i] = 0
 
     def recover_site(self, site_number, timestamp):
         self.sites[site_number].last_recovered_timestamp = timestamp
+        self.sites[site_number].recovers_list.append(timestamp)
         self.sites[site_number].live = True
 
     def dump(self):

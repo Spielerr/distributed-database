@@ -36,7 +36,7 @@ class TransactionManager:
                 self.site_manager.return_value(variable, transaction_begin_time)) + " read from site " + str(
                 from_site_number) + " by transaction " + str(transaction_number))
         else:
-            # TODO need to put transaction status as wait or abort and do whatever else is required
+            # TODO need to put transaction status should abort
             print("transaction " + str(transaction_number) + " that wants to read variable " + str(
                 variable) + " cannot be read from any site atm")
 
