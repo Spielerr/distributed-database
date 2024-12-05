@@ -72,8 +72,8 @@ class SiteManager:
         # if write failed and we have exited out of the for loop, then need to WAIT
 
     def fail_site(self, site_number, timestamp):
-        self.sites[site_number - 1].last_failed_timestamp = timestamp
-        self.sites[site_number - 1].live = False
+        self.sites[site_number].last_failed_timestamp = timestamp
+        self.sites[site_number].live = False
         for i in range(2, 21, 2):  # setting read mask of all even numbered variables to 0
             self.sites[site_number].read_mask[i] = 0
 
