@@ -14,7 +14,7 @@ class TransactionManager:
     def __init__(self, site_manager):
         self.all_transactions = dict() # {transaction_number: Transaction obj}
         self.site_manager = site_manager
-        self.graph = {} # {transaction : [transaction, ...]} contains only rw edges
+        self.graph = {} # {transaction : [(transaction, 'rw' or 'wr' or 'ww'), ...]}
 
     def begin_transaction(self, transaction_number: int, timestamp: int):
         # create new transaction object
@@ -35,7 +35,8 @@ class TransactionManager:
         value_read, from_site_number = self.site_manager.return_value(variable, transaction_begin_time)
         if value_read is not None:
             # if transaction successfuly reads then add to store_read of that var at that site
-            self.site_manager.sites[from_site_number].store_read[variable].append(self.all_transactions[transaction_number])
+            # print('from_site_number : ', from_site_number)
+            self.site_manager.sites[from_site_number-1].store_read[variable].append(self.all_transactions[transaction_number])
             print("x" + str(variable) + ": " + str(
                 self.site_manager.return_value(variable, transaction_begin_time)) + " read from site " + str(
                 from_site_number) + " by transaction " + str(transaction_number))
@@ -49,7 +50,7 @@ class TransactionManager:
 
         if not self.transaction_has_all_reads(transaction_number):
             if self.transaction_is_first_committer(transaction_number) and self.update_transaction_values(transaction_number, timestamp):
-                if self.check_graph(self.all_transactions[transaction_number], timestamp):
+                if self.check_and_update_graph(self.all_transactions[transaction_number], timestamp):
                     self.all_transactions[transaction_number].succeeded = True
                     # TODO : print where all transaction wrote?
                     print("T" + str(transaction_number) + " commits")
@@ -86,42 +87,136 @@ class TransactionManager:
 
     def update_transaction_values(self, transaction_number: int, timestamp: int):
         for new_write in self.all_transactions[transaction_number].write_operations:
-            if not self.site_manager.update_site(new_write[1], new_write[2], timestamp, new_write[0]):
+            if not self.site_manager.update_site(new_write[1], new_write[2], timestamp, new_write[0], self.all_transactions[transaction_number]):
                 return False
         return True
 
-    def check_graph(self, transaction, end_timestamp):
+
+    def check_and_update_graph(self, transaction, end_timestamp):
         '''
         should only be called if first-committer and site-failue checks have been performed
         need to use - transaction, graph, read_store from variable, write_operations and read_operations
         '''
-        buffer = []
+        # populate graph
+        buffer = [] # helps to populate graph
         for ops in transaction.write_operations:
             variable_to_write = ops[1]
             for site in self.site_manager.sites:
-                for trn in site.store_read[variable_to_write]:
-                    if trn.begin_timestamp < end_timestamp:
-                        if [trn, transaction] not in buffer:
-                            buffer.append([trn, transaction])
-                            if transaction in self.graph and len(self.graph[transaction]) > 0: # look upstream
-                                print('transaction aborts due to rw edges')
-                                return False # abort transaction
-                            for key in self.graph:
-                                if trn in self.graph[key]: # look downstream
-                                    print('transaction aborts due to rw edges')
-                                    return False # abort transaction
-        
+                if variable_to_write in site.store_read:
+                    for trn in site.store_read[variable_to_write]:
+                        if trn.begin_timestamp < end_timestamp:             # adding rw edge
+                            if [trn, transaction, 'rw'] not in buffer:
+                                buffer.append([trn, transaction, 'rw'])
+                if variable_to_write in site.store:
+                    for tuple in site.store[variable_to_write]:
+                        if tuple[2] == 'begin state':
+                            continue
+                        trn = tuple[2]
+                        if trn.end_timestamp < transaction.begin_timestamp:   # adding ww edge
+                            if [trn, transaction, 'ww'] not in buffer:
+                                buffer.append([trn, transaction, 'ww'])
+        for ops in transaction.read_operations:
+            variable_to_read = ops[1]
+            for site in self.site_manager.sites:
+                if variable_to_read in site.store:
+                    for tuple in site.store[variable_to_read]:
+                        if tuple[2] == 'begin state':
+                            continue
+                        trn = tuple[2]
+                        if trn.end_timestamp < transaction.begin_timestamp:   # adding wr edge
+                            if [trn, transaction, 'wr'] not in buffer:
+                                buffer.append([trn, transaction, 'wr'])
+
         for li in buffer:
             if li[0] not in self.graph:
-                self.graph[li[0]] = [li[1]]
+                self.graph[li[0]] = [(li[1], li[2])]
             else:
-                self.graph[li[0]].append(li[1])
+                if (li[1], li[2]) not in self.graph[li[0]]:
+                    self.graph[li[0]].append((li[1], li[2]))
+        
+        # do modified dfs to find all cycles that start from transaction
+        all_cycles = self.find_cycles((transaction, 'origin'))
+
+        for cycle in all_cycles:
+            print('a cycle : ', end=', ')
+            for t in cycle:
+                print(str(((t[0].transaction_number, t[1]))), end=', ')
+            print()
+            count = 0
+            for e in cycle:
+                if e[1] == 'rw':
+                    count += 1
+                if count == 2:
+                    print('transaction aborts due to rw edges cycle')
+                    return False
+
         return True # can commit
-    
+
+    def find_cycles(self, start_vertex):
+        path = []             # Stack to store the current path
+        visited_in_path = set()  # Track visited vertices in the current path
+        all_cycles = []       # List to store detected cycles
+
+        def dfs(current_vertex):
+            path.append(current_vertex)
+            visited_in_path.add(current_vertex)
+
+            if current_vertex[0] in self.graph:
+                for neighbor in self.graph[current_vertex[0]]:
+                    if neighbor[0] == start_vertex[0]:  # Cycle detected
+                        all_cycles.append(path.copy())
+                        all_cycles[-1].append(neighbor)
+                    elif neighbor not in visited_in_path:
+                        dfs(neighbor)
+
+            path.pop()              # Backtrack
+            visited_in_path.remove(current_vertex)
+
+        dfs(start_vertex)
+        return all_cycles
 
     def remove_from_graph(self, transaction):
         if transaction in self.graph:
             del self.graph[transaction]
         
         for key in self.graph:
-            self.graph[key] = [item for item in self.graph[key] if item != transaction]
+            self.graph[key] = [item for item in self.graph[key] if item[0] != transaction]
+
+
+
+
+    # def check_graph(self, transaction, end_timestamp):
+    #     '''
+    #     should only be called if first-committer and site-failue checks have been performed
+    #     need to use - transaction, graph, read_store from variable, write_operations and read_operations
+    #     '''
+    #     buffer = []
+    #     for ops in transaction.write_operations:
+    #         variable_to_write = ops[1]
+    #         for site in self.site_manager.sites:
+    #             for trn in site.store_read[variable_to_write]:
+    #                 if trn.begin_timestamp < end_timestamp:
+    #                     if [trn, transaction] not in buffer:
+    #                         buffer.append([trn, transaction])
+    #                         if transaction in self.graph and len(self.graph[transaction]) > 0: # look upstream
+    #                             print('transaction aborts due to rw edges')
+    #                             return False # abort transaction
+    #                         for key in self.graph:
+    #                             if trn in self.graph[key]: # look downstream
+    #                                 print('transaction aborts due to rw edges')
+    #                                 return False # abort transaction
+        
+    #     for li in buffer:
+    #         if li[0] not in self.graph:
+    #             self.graph[li[0]] = [li[1]]
+    #         else:
+    #             self.graph[li[0]].append(li[1])
+    #     return True # can commit
+    
+
+    # def remove_from_graph(self, transaction):
+    #     if transaction in self.graph:
+    #         del self.graph[transaction]
+        
+    #     for key in self.graph:
+    #         self.graph[key] = [item for item in self.graph[key] if item != transaction]

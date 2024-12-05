@@ -14,12 +14,12 @@ class Site:
     def initialize_store(self):
         # even-indexed data is stored in all sites
         for i in range(2, 21, 2):
-            self.store[i] = [(0, i * 10)]
+            self.store[i] = [(0, i * 10, 'begin state')]
 
         # for odd-indexed data
         if self.site_number % 2 == 0:
-            self.store[self.site_number - 1] = [(0, (self.site_number - 1) * 10)]
-            self.store[self.site_number - 1 + 10] = [(0, (self.site_number - 1 + 10) * 10)]
+            self.store[self.site_number - 1] = [(0, (self.site_number - 1) * 10, 'begin state')]
+            self.store[self.site_number - 1 + 10] = [(0, (self.site_number - 1 + 10) * 10, 'begin state')]
 
         for key in self.store:
             self.read_mask[key] = 1

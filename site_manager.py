@@ -69,7 +69,7 @@ class SiteManager:
 
         # if read failed and we have exited out of the for loop, then need to WAIT
 
-    def update_site(self, variable, value, update_timestamp, write_timestamp):
+    def update_site(self, variable, value, update_timestamp, write_timestamp, transaction):
         '''
         update_timestamp is at transaction commit time
         write_timestamp is at the time the write instruction came
@@ -84,7 +84,7 @@ class SiteManager:
             if site.last_failed_timestamp < write_timestamp and (
                     site.last_failed_timestamp <= site.last_recovered_timestamp < write_timestamp):
                 if variable in site.store:
-                    site.store[variable].append((update_timestamp, value))
+                    site.store[variable].append((update_timestamp, value, transaction))
                     if site.read_mask[variable] == 0:
                         site.read_mask[variable] = 1
             elif site.last_failed_timestamp < write_timestamp < site.last_recovered_timestamp:

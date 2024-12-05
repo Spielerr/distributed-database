@@ -74,4 +74,4 @@ class MainManager:
 
 if __name__ == "__main__":
     main_manager = MainManager()
-    main_manager.parse_input("tests/test22.txt")
+    main_manager.parse_input("tests/test18.txt")
