@@ -122,4 +122,6 @@ class TransactionManager:
     def remove_from_graph(self, transaction):
         if transaction in self.graph:
             del self.graph[transaction]
-
+        
+        for key in self.graph:
+            self.graph[key] = [item for item in self.graph[key] if item != transaction]
