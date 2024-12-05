@@ -2,6 +2,7 @@ class Site:
     def __init__(self, site_number):
         self.site_number = site_number
         self.store = dict() # {variable: [(timestamp, value, transaction), ...]}
+        self.store_read = {} # {variable: [transaction, ...]}
         self.read_mask = {}  # {variable: 0 or 1} 0 means cannot read, 1 can
         self.initialize_store()
         self.last_failed_timestamp = 0
@@ -22,6 +23,9 @@ class Site:
 
         for key in self.store:
             self.read_mask[key] = 1
+        
+        for key in self.store:
+            self.store_read[key] = []
 
     def display_store(self):
         all_variables = ""
