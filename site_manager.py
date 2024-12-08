@@ -1,3 +1,10 @@
+"""
+Authors for all functions: Karan Kumar Gangadhar and Aryaman Shaan jointly
+
+This file contains all the site handling functions which directly utilizes all of the 10 sites initialized
+"""
+
+
 from site_module import Site
 
 

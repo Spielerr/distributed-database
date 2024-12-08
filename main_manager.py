@@ -1,13 +1,13 @@
+"""
+Authors for all functions: Karan Kumar Gangadhar and Aryaman Shaan jointly
+
+This file parses input and calls relevant functions to process each of the different types of expected input
+"""
+
 import re
 
 from site_manager import SiteManager
 from transaction_manager import TransactionManager
-
-"""
-Authors: Karan Kumar Gangadhar and Aryaman Shaan
-
-This file parses input and calls relevant functions to process each of the different types of expected input
-"""
 
 """
 This is the main class initializing two objects - site manager and transaction manager

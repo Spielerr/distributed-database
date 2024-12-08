@@ -1,3 +1,10 @@
+"""
+Authors for all functions: Karan Kumar Gangadhar and Aryaman Shaan jointly
+
+This file defines all transaction operations functions
+"""
+
+
 from transaction import Transaction
 
 

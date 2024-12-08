@@ -1,3 +1,9 @@
+"""
+Authors for all functions: Karan Kumar Gangadhar and Aryaman Shaan jointly
+
+This file defines a single site and relevant fields in the same
+"""
+
 class Site:
     def __init__(self, site_number):
         self.site_number = site_number # 0, 1, 2, ... 9
