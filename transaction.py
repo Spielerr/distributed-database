@@ -1,3 +1,9 @@
+"""
+Authors for all functions: Karan Kumar Gangadhar and Aryaman Shaan jointly
+
+This file contains the transaction class with all the relevant fields
+"""
+
 class Transaction:
     def __init__(self, transaction_number: int, timestamp: int):
         self.transaction_number = transaction_number
